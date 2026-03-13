@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-pokemonYellow: #ffcb05;
+  --color-pokemonBlue: #2a75bb;
+  --color-pokeballRed: #ee1515;
+}
+.dark {
+  --color-pokemonYellow: #ffcb05;
+  --color-pokemonBlue: #2a75bb;
+  --color-pokeballRed: #ee1515;
+}

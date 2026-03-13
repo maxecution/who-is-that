@@ -1,0 +1,21 @@
+{
+  "name": "api",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx src/server.ts"
+  },
+  "packageManager": "pnpm@10.6.4",
+  "dependencies": {
+    "@who-is-that/shared-types": "workspace:^",
+    "axios-cache-interceptor": "^1.12.0",
+    "fastify": "^5.8.2",
+    "pokenode-ts": "^1.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.3"
+  }
+}
