@@ -1,6 +1,7 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyInstance } from 'fastify';
+import pokemonRoutes from './routes/pokemon';
 
-const server = Fastify({
+const server: FastifyInstance = Fastify({
   logger: true,
 });
 
@@ -9,9 +10,21 @@ server.get('/', async () => {
   return { status: 'ok' };
 });
 
+// register API routes
+server.register(pokemonRoutes, {
+  prefix: '/api/pokemon',
+});
+
 const start = async () => {
   try {
-    await server.listen({ port: 3001 });
+    const port = Number(process.env.PORT) || 3001;
+
+    await server.listen({
+      port,
+      host: '0.0.0.0',
+    });
+
+    server.log.info(`API running on http://localhost:${port}`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
