@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
-import { type Pokemon, PokemonClient } from 'pokenode-ts';
+import { pokemonClient } from '../clients/pokeapiClient';
+import { type Pokemon } from 'pokenode-ts';
 import { PokemonIndex, PokemonSummary } from '@who-is-that/shared-types';
 
 import pokemonIndex from '../data/pokemon-index.json';
@@ -12,8 +13,6 @@ interface PokemonWithCries extends Pokemon {
 }
 
 const pokemonRoutes: FastifyPluginAsync = async (fastify) => {
-  const pokemonClient = new PokemonClient();
-
   fastify.get('/index', async () => {
     return pokemonIndex as PokemonIndex[];
   });
@@ -21,24 +20,18 @@ const pokemonRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Params: { id: string } }>('/:id', async (request, reply) => {
     const id = Number(request.params.id);
 
-    if (!Number.isInteger(id) || id < 0) {
+    if (!Number.isInteger(id) || id < 1 || id > 1025) {
       return reply.status(400).send({
         error: 'Invalid pokemon id',
       });
-    }
-
-    if (id === 0) {
-      const missingNo: PokemonSummary = { id, name: 'MissingNo' };
-
-      return missingNo;
     }
 
     const pokemon: PokemonWithCries = await pokemonClient.getPokemonById(id);
     const pokemonSummary: PokemonSummary = {
       id,
       name: pokemon.species.name,
-      sprite: pokemon.sprites.other?.dream_world.front_default ?? null,
-      cry: pokemon.cries?.latest ?? null,
+      sprite: pokemon.sprites.other?.home.front_default ?? pokemon.sprites.front_default ?? null,
+      cry: pokemon.cries?.latest ?? pokemon.cries?.legacy ?? null,
     };
 
     return pokemonSummary;
