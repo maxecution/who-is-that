@@ -2,10 +2,9 @@ import { FastifyPluginAsync } from 'fastify';
 import { pokemonClient } from '../clients/pokeapiClient';
 import { type Pokemon } from 'pokenode-ts';
 import { PokemonIndex, PokemonSummary } from '@who-is-that/shared-types';
-
 import pokemonIndex from '../data/pokemon-index.json';
 
-interface PokemonWithCries extends Pokemon {
+export interface PokemonWithCries extends Pokemon {
   cries?: {
     latest?: string | null;
     legacy?: string | null;
