@@ -9,7 +9,7 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
   // Global ignores
-  globalIgnores(['dist', 'node_modules', '.pnpm']),
+  globalIgnores(['**/dist/**', '**/node_modules/**', '**/.pnpm/**']),
 
   // Base JS recommended rules
   js.configs.recommended,

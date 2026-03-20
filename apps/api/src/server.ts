@@ -1,21 +1,20 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyInstance } from 'fastify';
+import pokemonRoutes from './routes/pokemon';
 
-const server = Fastify({
-  logger: true,
-});
+export function buildServer(logger: boolean = false): FastifyInstance {
+  const server: FastifyInstance = Fastify({
+    logger,
+  });
 
-// health check
-server.get('/', async () => {
-  return { status: 'ok' };
-});
+  // health check
+  server.get('/', async () => {
+    return { status: 'ok' };
+  });
 
-const start = async () => {
-  try {
-    await server.listen({ port: 3001 });
-  } catch (err) {
-    server.log.error(err);
-    process.exit(1);
-  }
-};
+  // register API routes
+  server.register(pokemonRoutes, {
+    prefix: '/api/pokemon',
+  });
 
-start();
+  return server;
+}
