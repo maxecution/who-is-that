@@ -4,8 +4,8 @@
   "type": "module",
   "packageManager": "pnpm@10.6.4",
   "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "dev:api": "pnpm --filter api dev",
+    "web:dev": "pnpm --filter web dev",
+    "api:dev": "pnpm --filter api dev",
     "dev": "pnpm -r dev",
     "web:build": "pnpm --filter web build",
     "api:test": "pnpm --filter api test",

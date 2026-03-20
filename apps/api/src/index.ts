@@ -1,7 +1,8 @@
 import { buildServer } from './server';
 
 const start = async () => {
-  const server = buildServer();
+  const isDev = process.env.NODE_ENV === 'development';
+  const server = buildServer(isDev);
 
   try {
     const port = Number(process.env.PORT) || 3001;
