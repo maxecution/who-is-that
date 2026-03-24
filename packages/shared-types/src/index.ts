@@ -3,7 +3,7 @@ export interface PokemonIndex {
   name: string;
 }
 export interface PokemonSummary extends PokemonIndex {
-  sprite?: string | null;
+  sprite: string;
 
-  cry?: string | null;
+  cry: string;
 }
