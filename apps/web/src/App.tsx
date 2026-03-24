@@ -1,7 +1,12 @@
 import { type PokemonSummary } from '@who-is-that/shared-types';
 
 export default function App() {
-  const pokemon: PokemonSummary = { id: 25, name: 'Pikachu' };
+  const pokemon: PokemonSummary = {
+    id: 25,
+    name: 'Pikachu',
+    sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/25.png',
+    cry: 'https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/25.ogg',
+  };
 
   return (
     <div className='min-h-screen bg-slate-100 flex items-center justify-center p-6'>
