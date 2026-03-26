@@ -20,6 +20,10 @@ describe('gameEngineUtils', () => {
 
       expect(getNextPokemon([1, 2, 3])).toBe(3);
     });
+
+    it('returns the only Pokemon when there is only one in the pool', () => {
+      expect(getNextPokemon([1])).toBe(1);
+    });
   });
 
   describe('getNextPokemonOrKeepCurrent', () => {
@@ -35,8 +39,8 @@ describe('gameEngineUtils', () => {
   });
 
   describe('updateRemainingPool', () => {
-    it('removes the current Pokemon from remaining pool', () => {
-      expect(updateRemainingPool([1, 2, 3], 2)).toEqual([1, 3]);
+    it('removes the current Pokemon from remaining pool (including accidental duplicates)', () => {
+      expect(updateRemainingPool([1, 2, 2, 3], 2)).toEqual([1, 3]);
     });
 
     it('returns same pool when current Pokemon is not in remaining pool', () => {
@@ -75,6 +79,15 @@ describe('gameEngineUtils', () => {
 
       expect(result.remainingPool).toBe(remainingPool);
       expect(result.incorrectPool).toBe(incorrectPool);
+    });
+
+    it('does not throw when both pools are empty', () => {
+      const result = refillRemainingPool([], []);
+
+      expect(result).toEqual({
+        remainingPool: [],
+        incorrectPool: [],
+      });
     });
   });
 });
