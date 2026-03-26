@@ -1,7 +1,9 @@
+import { type PokemonGeneration } from '@web/types/game';
 export default function generatePokemonPool(enabledGenerations: number[]): number[] {
   const pokemonPool: number[] = [];
+  const validGenerations = sanitiseGenerations(enabledGenerations);
 
-  enabledGenerations.forEach((generation) => {
+  validGenerations.forEach((generation) => {
     const { generationStartId, generationEndId } = getGenerationIds(generation);
 
     for (let id = generationStartId; id <= generationEndId; id++) {
@@ -12,7 +14,19 @@ export default function generatePokemonPool(enabledGenerations: number[]): numbe
   return pokemonPool;
 }
 
-function getGenerationIds(generation: number): { generationStartId: number; generationEndId: number } {
+function sanitiseGenerations(enabledGenerations: number[]): PokemonGeneration[] {
+  const uniqueGenerations = new Set<PokemonGeneration>();
+
+  enabledGenerations.forEach((generation) => {
+    if (Number.isInteger(generation) && generation >= 1 && generation <= 9) {
+      uniqueGenerations.add(generation as PokemonGeneration);
+    }
+  });
+
+  return Array.from(uniqueGenerations).sort((a, b) => a - b);
+}
+
+function getGenerationIds(generation: PokemonGeneration): { generationStartId: number; generationEndId: number } {
   switch (generation) {
     case 1:
       return { generationStartId: 1, generationEndId: 151 };
@@ -32,7 +46,5 @@ function getGenerationIds(generation: number): { generationStartId: number; gene
       return { generationStartId: 811, generationEndId: 906 };
     case 9:
       return { generationStartId: 907, generationEndId: 1008 };
-    default:
-      return { generationStartId: 1, generationEndId: 151 };
   }
 }

@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@web': '/src',
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
@@ -8,7 +13,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      exclude: ['src/data/**', 'src/**/*.test.ts'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/main.ts', 'src/data/**', 'src/**/*.test.ts', 'src/test/**'],
     },
   },
 });

@@ -16,3 +16,5 @@ export type UseGameState = GameState & {
   enabledGenerations: number[];
   soundEnabled: boolean;
 };
+
+export type PokemonGeneration = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
