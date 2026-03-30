@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { type UseGameState } from '@web/types/game';
+import { type GameSessionState } from '@web/types/game';
 import { type PokemonSummary } from '@who-is-that/shared-types';
 import {
   initialiseGame,
@@ -9,12 +9,9 @@ import {
 } from '@web/game/gameEngine';
 import generatePokemonPool from '@web/game/utils/generatePokemonPool';
 import normaliseName from '@web/game/utils/normaliseName';
+import { STORAGE_KEY, API_BASE_URL } from '@web/constants';
 
-// Local Storage
-const STORAGE_KEY = 'who-is-that:game';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
-
-function loadState(): Partial<UseGameState> | null {
+function loadState(): Partial<GameSessionState> | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -23,16 +20,16 @@ function loadState(): Partial<UseGameState> | null {
   }
 }
 
-function saveState(state: UseGameState) {
+function saveState(state: GameSessionState) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 // Hook
 export function useGame() {
-  const [state, setState] = useState<UseGameState>(() => {
+  const [state, setState] = useState<GameSessionState>(() => {
     const saved = loadState();
 
-    if (saved) return saved as UseGameState;
+    if (saved) return saved as GameSessionState;
 
     const enabledGenerations = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     const pool = generatePokemonPool(enabledGenerations);

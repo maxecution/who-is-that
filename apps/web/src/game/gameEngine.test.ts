@@ -116,6 +116,12 @@ describe('gameEngine', () => {
       );
     });
 
+    it('returns true when lives are below zero', () => {
+      expect(isGameOver({ currentPokemonId: 1, lives: -1, score: 0, remainingPool: [2], incorrectPool: [3] })).toBe(
+        true,
+      );
+    });
+
     it('returns true when both pools are empty', () => {
       expect(isGameOver({ currentPokemonId: 1, lives: 2, score: 0, remainingPool: [], incorrectPool: [] })).toBe(true);
     });
@@ -125,15 +131,33 @@ describe('gameEngine', () => {
         false,
       );
     });
+
+    it('returns false when lives remain but only incorrect Pokemon are available', () => {
+      expect(isGameOver({ currentPokemonId: 1, lives: 2, score: 0, remainingPool: [], incorrectPool: [3] })).toBe(
+        false,
+      );
+    });
   });
 
   describe('resetGame', () => {
-    it('returns a fresh initial game state', () => {
+    it('returns a fresh initial game state with default lives', () => {
       const result = resetGame([1]);
 
       expect(result).toEqual({
         currentPokemonId: 1,
         lives: 6,
+        score: 0,
+        remainingPool: [],
+        incorrectPool: [],
+      });
+    });
+
+    it('returns a fresh initial game state with custom initial lives', () => {
+      const result = resetGame([1], 3);
+
+      expect(result).toEqual({
+        currentPokemonId: 1,
+        lives: 3,
         score: 0,
         remainingPool: [],
         incorrectPool: [],

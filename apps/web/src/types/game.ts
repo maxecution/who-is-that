@@ -7,7 +7,7 @@ export type GameState = {
   incorrectPool: number[];
 };
 
-export type UseGameState = GameState & {
+export type GameSessionState = GameState & {
   isGameOver: boolean;
   currentPokemon: PokemonSummary | null;
   isLoading: boolean;
