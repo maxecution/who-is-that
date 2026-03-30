@@ -8,6 +8,9 @@
     "api:dev": "pnpm --filter api dev",
     "dev": "pnpm -r dev",
     "web:build": "pnpm --filter web build",
+    "web:test": "pnpm --filter web test",
+    "web:test:coverage": "pnpm --filter web test:coverage",
+    "api:build": "pnpm --filter api build",
     "api:test": "pnpm --filter api test",
     "api:test:coverage": "pnpm --filter api test:coverage",
     "lint": "eslint ."

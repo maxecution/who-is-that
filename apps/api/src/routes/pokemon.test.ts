@@ -60,7 +60,7 @@ describe('Pokemon API', () => {
       expect(body.sprite).toBe('default.png');
     });
 
-    it('returns null for sprites, when no sprite exists', async () => {
+    it('returns empty string for sprites, when no sprite exists', async () => {
       vi.spyOn(pokemonClient, 'getPokemonById').mockResolvedValue(mockPokemon.withoutSprites());
 
       const res = await app.inject({
@@ -70,7 +70,7 @@ describe('Pokemon API', () => {
 
       const body = res.json();
 
-      expect(body.sprite).toBeNull();
+      expect(body.sprite).toBe('');
     });
 
     it('falls back to legacy cry when latest cry is not available', async () => {
@@ -86,7 +86,7 @@ describe('Pokemon API', () => {
       expect(body.cry).toBe('legacy.ogg');
     });
 
-    it('returns null for cries, when no cry exists', async () => {
+    it('returns empty string for cries, when no cry exists', async () => {
       vi.spyOn(pokemonClient, 'getPokemonById').mockResolvedValue(mockPokemon.withoutAnyCry());
 
       const body = (
@@ -96,7 +96,7 @@ describe('Pokemon API', () => {
         })
       ).json();
 
-      expect(body.cry).toBeNull();
+      expect(body.cry).toBe('');
     });
     it('returns 400 for invalid id', async () => {
       const resString = await app.inject({

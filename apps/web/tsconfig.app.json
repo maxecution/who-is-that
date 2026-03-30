@@ -22,7 +22,13 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Path Aliasing */
+    "baseUrl": "./",
+    "paths": {
+      "@web/*": ["src/*"]
+    }
   },
   "include": ["src", "postcss.config.ts"]
 }

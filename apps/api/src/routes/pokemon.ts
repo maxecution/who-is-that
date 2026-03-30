@@ -29,8 +29,8 @@ const pokemonRoutes: FastifyPluginAsync = async (fastify) => {
     const pokemonSummary: PokemonSummary = {
       id,
       name: pokemon.species.name,
-      sprite: pokemon.sprites.other?.home.front_default ?? pokemon.sprites.front_default ?? null,
-      cry: pokemon.cries?.latest ?? pokemon.cries?.legacy ?? null,
+      sprite: pokemon.sprites.other?.home.front_default ?? pokemon.sprites.front_default ?? '',
+      cry: pokemon.cries?.latest ?? pokemon.cries?.legacy ?? '',
     };
 
     return pokemonSummary;
