@@ -24,7 +24,6 @@ export default function App() {
               className={`px-3 py-1 rounded-full border-2 ${state.enabledGenerations.includes(gen) ? 'border-pokemonBlue bg-pokemonBlue text-white' : 'border-slate-300 bg-slate-200 text-slate-500'} hover:bg-opacity-80 transition`}
               onClick={() => {
                 actions.toggleGeneration(gen);
-                console.log('Enabled Generation: ', state.enabledGenerations);
               }}>
               Gen {gen}
             </button>
@@ -46,7 +45,6 @@ export default function App() {
               className='flex-1 rounded-lg bg-pokemonBlue text-white py-2 font-medium hover:opacity-90 transition'
               onClick={() => {
                 actions.submitGuess((document.querySelector('input[name="pokemon-guess"]') as HTMLInputElement).value);
-                console.log(state);
               }}>
               Guess
             </button>
@@ -55,7 +53,6 @@ export default function App() {
               className='flex-1 rounded-lg bg-slate-200 py-2 font-medium hover:bg-slate-300 transition'
               onClick={() => {
                 actions.skip();
-                console.log(state);
               }}>
               Skip
             </button>
@@ -68,9 +65,13 @@ export default function App() {
             </button>
             <button
               className='flex-1 rounded-lg bg-slate-200 py-2 font-medium hover:bg-slate-300 transition'
+              onClick={actions.playSound}>
+              Play Sound
+            </button>
+            <button
+              className='flex-1 rounded-lg bg-slate-200 py-2 font-medium hover:bg-slate-300 transition'
               onClick={() => {
                 actions.reset();
-                console.log(state);
               }}>
               Reset
             </button>

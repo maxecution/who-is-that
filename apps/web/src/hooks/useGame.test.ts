@@ -53,7 +53,10 @@ function makeGameSessionState(overrides: Partial<GameSessionState> = {}): GameSe
 
 // Setup
 
-const mockAudio = vi.fn();
+const mockAudioPlay = vi.fn().mockResolvedValue(undefined);
+const mockAudio = vi.fn(function MockAudio() {
+  return { play: mockAudioPlay };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

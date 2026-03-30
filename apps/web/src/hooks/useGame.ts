@@ -11,6 +11,11 @@ import generatePokemonPool from '@web/game/utils/generatePokemonPool';
 import normaliseName from '@web/game/utils/normaliseName';
 import { STORAGE_KEY, API_BASE_URL } from '@web/constants';
 
+function playCry(cryUrl: string) {
+  const audio = new Audio(cryUrl);
+  void audio.play().catch(() => undefined);
+}
+
 function loadState(): Partial<GameSessionState> | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -84,10 +89,15 @@ export function useGame() {
 
   // Sound
   useEffect(() => {
-    if (state.soundEnabled && state.currentPokemon?.cry && !state.isGameOver) {
-      new Audio(state.currentPokemon.cry);
+    if (
+      state.soundEnabled &&
+      state.currentPokemon?.cry &&
+      state.currentPokemon.id === state.currentPokemonId &&
+      !state.isGameOver
+    ) {
+      playCry(state.currentPokemon.cry);
     }
-  }, [state.currentPokemonId, state.soundEnabled, state.isGameOver]);
+  }, [state.currentPokemon, state.currentPokemonId, state.soundEnabled, state.isGameOver]);
 
   // Actions
   function submitGuess(guess: string) {
@@ -144,7 +154,7 @@ export function useGame() {
 
       // play immediately if enabling
       if (nextEnabled && prev.currentPokemon?.cry) {
-        new Audio(prev.currentPokemon.cry);
+        playCry(prev.currentPokemon.cry);
       }
 
       return {
@@ -156,7 +166,7 @@ export function useGame() {
 
   function playSound() {
     if (state.currentPokemon?.cry) {
-      new Audio(state.currentPokemon.cry);
+      playCry(state.currentPokemon.cry);
     }
   }
 
