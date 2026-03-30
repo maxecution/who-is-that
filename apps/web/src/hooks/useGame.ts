@@ -50,7 +50,6 @@ export function useGame() {
       soundEnabled: false,
     };
   });
-  console.log('Loaded state:', state);
 
   // Fetch Pokemon
   useEffect(() => {

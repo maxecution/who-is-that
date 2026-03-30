@@ -39,7 +39,11 @@ export default function App() {
         </p>
 
         <div className='flex flex-col gap-4 w-full'>
-          <input className='w-full rounded-lg border-2 border-black focus:border-pokemonBlue' name='pokemon-guess' />
+          <input
+            className='w-full rounded-lg border-2 border-black focus:border-pokemonBlue'
+            name='pokemon-guess'
+            value={state.currentPokemon?.name}
+          />
           <div className='flex gap-3 w-full'>
             <button
               className='flex-1 rounded-lg bg-pokemonBlue text-white py-2 font-medium hover:opacity-90 transition'

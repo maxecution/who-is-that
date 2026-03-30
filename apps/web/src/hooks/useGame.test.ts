@@ -63,7 +63,6 @@ beforeEach(() => {
   localStorage.clear();
   vi.stubGlobal('Audio', mockAudio);
   vi.stubGlobal('fetch', vi.fn());
-  vi.spyOn(console, 'log').mockImplementation(() => {});
 
   vi.mocked(generatePokemonPool).mockReturnValue([25, 151]);
   vi.mocked(initialiseGame).mockReturnValue(mockGameState);
