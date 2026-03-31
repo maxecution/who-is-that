@@ -12,29 +12,33 @@ export interface PokemonWithCries extends Pokemon {
 }
 
 const pokemonRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/index', async () => {
+  fastify.get('/index', { config: { rateLimit: { max: 40, timeWindow: '1 minute' } } }, async () => {
     return pokemonIndex as PokemonIndex[];
   });
 
-  fastify.get<{ Params: { id: string } }>('/:id', async (request, reply) => {
-    const id = Number(request.params.id);
+  fastify.get<{ Params: { id: string } }>(
+    '/:id',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const id = Number(request.params.id);
 
-    if (!Number.isInteger(id) || id < 1 || id > 1025) {
-      return reply.status(400).send({
-        error: 'Invalid pokemon id',
-      });
-    }
+      if (!Number.isInteger(id) || id < 1 || id > 1025) {
+        return reply.status(400).send({
+          error: 'Invalid pokemon id',
+        });
+      }
 
-    const pokemon: PokemonWithCries = await pokemonClient.getPokemonById(id);
-    const pokemonSummary: PokemonSummary = {
-      id,
-      name: pokemon.species.name,
-      sprite: pokemon.sprites.other?.home.front_default ?? pokemon.sprites.front_default ?? '',
-      cry: pokemon.cries?.latest ?? pokemon.cries?.legacy ?? '',
-    };
+      const pokemon: PokemonWithCries = await pokemonClient.getPokemonById(id);
+      const pokemonSummary: PokemonSummary = {
+        id,
+        name: pokemon.species.name,
+        sprite: pokemon.sprites.other?.home.front_default ?? pokemon.sprites.front_default ?? '',
+        cry: pokemon.cries?.latest ?? pokemon.cries?.legacy ?? '',
+      };
 
-    return pokemonSummary;
-  });
+      return pokemonSummary;
+    },
+  );
 };
 
 export default pokemonRoutes;

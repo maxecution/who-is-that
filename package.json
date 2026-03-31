@@ -5,14 +5,20 @@
   "packageManager": "pnpm@10.6.4",
   "scripts": {
     "web:dev": "pnpm --filter web dev",
-    "api:dev": "pnpm --filter api dev",
-    "dev": "pnpm -r dev",
     "web:build": "pnpm --filter web build",
+    "web:start": "pnpm --filter web start",
     "web:test": "pnpm --filter web test",
     "web:test:coverage": "pnpm --filter web test:coverage",
+    "api:dev": "pnpm --filter api dev",
     "api:build": "pnpm --filter api build",
+    "api:start": "pnpm --filter api start",
     "api:test": "pnpm --filter api test",
     "api:test:coverage": "pnpm --filter api test:coverage",
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "start": "pnpm -r start",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
     "lint": "eslint ."
   },
   "devDependencies": {

@@ -13,7 +13,11 @@ import { STORAGE_KEY, API_BASE_URL } from '@web/constants';
 
 function playCry(cryUrl: string) {
   const audio = new Audio(cryUrl);
-  void audio.play().catch(() => undefined);
+  void audio.play().catch((error: unknown) => {
+    if (import.meta.env.DEV) {
+      console.error('Failed to play cry:', error);
+    }
+  });
 }
 
 function loadState(): Partial<GameSessionState> | null {
@@ -27,6 +31,34 @@ function loadState(): Partial<GameSessionState> | null {
 
 function saveState(state: GameSessionState) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function getApiErrorMessage(response: Response): string {
+  if (response.status === 429) {
+    const retryAfter = response.headers.get('retry-after');
+
+    if (retryAfter) {
+      const retryAfterSeconds = Number(retryAfter);
+
+      if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+        return `Too many requests. Please wait ${retryAfterSeconds} seconds and try again.`;
+      }
+
+      return 'Too many requests. Please wait a moment and try again.';
+    }
+
+    return 'Too many requests. Please wait a moment and try again.';
+  }
+
+  if (response.status >= 500) {
+    return 'Server error while loading Pokémon. Please try again.';
+  }
+
+  if (response.status >= 400) {
+    return 'Unable to load Pokémon right now. Please try again.';
+  }
+
+  return 'Failed to load Pokémon';
 }
 
 // Hook
@@ -60,7 +92,15 @@ export function useGame() {
 
       try {
         const res = await fetch(`${API_BASE_URL}/api/pokemon/${state.currentPokemonId}`);
-        if (!res.ok) throw new Error('API error');
+
+        if (!res.ok) {
+          setState((prev) => ({
+            ...prev,
+            error: getApiErrorMessage(res),
+            isLoading: false,
+          }));
+          return;
+        }
 
         const data: PokemonSummary = await res.json();
 
@@ -72,7 +112,7 @@ export function useGame() {
       } catch {
         setState((prev) => ({
           ...prev,
-          error: 'Failed to load Pokémon',
+          error: 'Network error while loading Pokémon. Check your connection and try again.',
           isLoading: false,
         }));
       }

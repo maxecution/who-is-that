@@ -121,4 +121,28 @@ describe('Pokemon API', () => {
       expect(resTooHigh.statusCode).toBe(400);
     });
   });
+
+  describe('Rate limiting', () => {
+    it('returns 429 when /index limit is exceeded (40 requests/minute)', async () => {
+      const responses = await Promise.all(
+        Array.from({ length: 40 }, () => app.inject({ method: 'GET', url: '/api/pokemon/index' })),
+      );
+      responses.forEach((res) => expect(res.statusCode).toBe(200));
+
+      const limited = await app.inject({ method: 'GET', url: '/api/pokemon/index' });
+      expect(limited.statusCode).toBe(429);
+    });
+
+    it('returns 429 when /:id limit is exceeded (60 requests/minute)', async () => {
+      vi.spyOn(pokemonClient, 'getPokemonById').mockResolvedValue(mockPokemon.full());
+
+      const responses = await Promise.all(
+        Array.from({ length: 60 }, () => app.inject({ method: 'GET', url: '/api/pokemon/25' })),
+      );
+      responses.forEach((res) => expect(res.statusCode).toBe(200));
+
+      const limited = await app.inject({ method: 'GET', url: '/api/pokemon/25' });
+      expect(limited.statusCode).toBe(429);
+    });
+  });
 });

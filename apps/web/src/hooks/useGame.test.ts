@@ -141,8 +141,99 @@ describe('useGame', () => {
       expect(result.current.state.error).toBeNull();
     });
 
-    it('sets error when the fetch response is not ok', async () => {
-      vi.mocked(fetch).mockResolvedValue({ ok: false, json: async () => ({}) } as Response);
+    it('sets a generic client error message when the fetch response is 4xx', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 404,
+        headers: new Headers(),
+        json: async () => ({}),
+      } as Response);
+
+      const { result } = renderHook(() => useGame());
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe('Unable to load Pokémon right now. Please try again.');
+      });
+
+      expect(result.current.state.isLoading).toBe(false);
+      expect(result.current.state.currentPokemon).toBeNull();
+    });
+
+    it('sets a rate limit message with retry-after when status is 429', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: new Headers({ 'retry-after': '10' }),
+        json: async () => ({}),
+      } as Response);
+
+      const { result } = renderHook(() => useGame());
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe('Too many requests. Please wait 10 seconds and try again.');
+      });
+
+      expect(result.current.state.isLoading).toBe(false);
+    });
+
+    it('sets a fallback rate limit message when retry-after header is a non-numeric value', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: new Headers({ 'retry-after': 'Some time later' }),
+        json: async () => ({}),
+      } as Response);
+
+      const { result } = renderHook(() => useGame());
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe('Too many requests. Please wait a moment and try again.');
+      });
+
+      expect(result.current.state.isLoading).toBe(false);
+    });
+
+    it('sets a fallback rate limit message when the 429 response has no retry-after header', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: new Headers(),
+        json: async () => ({}),
+      } as Response);
+
+      const { result } = renderHook(() => useGame());
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe('Too many requests. Please wait a moment and try again.');
+      });
+
+      expect(result.current.state.isLoading).toBe(false);
+    });
+
+    it('sets a server error message when the fetch response is 5xx', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 503,
+        headers: new Headers(),
+        json: async () => ({}),
+      } as Response);
+
+      const { result } = renderHook(() => useGame());
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe('Server error while loading Pokémon. Please try again.');
+      });
+
+      expect(result.current.state.isLoading).toBe(false);
+    });
+
+    it('sets a generic error message for unexpected non-ok responses outside 4xx/5xx range', async () => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: false,
+        status: 302,
+        headers: new Headers(),
+        json: async () => ({}),
+      } as Response);
 
       const { result } = renderHook(() => useGame());
 
@@ -151,16 +242,17 @@ describe('useGame', () => {
       });
 
       expect(result.current.state.isLoading).toBe(false);
-      expect(result.current.state.currentPokemon).toBeNull();
     });
 
-    it('sets error when fetch throws a network error', async () => {
+    it('sets a network-specific message when fetch throws', async () => {
       vi.mocked(fetch).mockRejectedValue(new Error('Network failure'));
 
       const { result } = renderHook(() => useGame());
 
       await waitFor(() => {
-        expect(result.current.state.error).toBe('Failed to load Pokémon');
+        expect(result.current.state.error).toBe(
+          'Network error while loading Pokémon. Check your connection and try again.',
+        );
       });
 
       expect(result.current.state.isLoading).toBe(false);
@@ -459,6 +551,51 @@ describe('useGame', () => {
       });
 
       expect(mockAudio).not.toHaveBeenCalled();
+    });
+
+    it('silently swallows errors when audio playback is rejected', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockAudioPlay.mockRejectedValueOnce(new DOMException('Autoplay blocked', 'NotAllowedError'));
+
+      const savedState = makeGameSessionState({ currentPokemon: mockPokemon });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
+
+      const { result } = renderHook(() => useGame());
+      mockAudio.mockClear();
+
+      await expect(
+        act(async () => {
+          result.current.actions.playSound();
+        }),
+      ).resolves.not.toThrow();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to play cry:', expect.any(DOMException));
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('logs nothing in production when audio playback fails', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      vi.stubEnv('DEV', false);
+      mockAudioPlay.mockRejectedValueOnce(new DOMException('Autoplay blocked', 'NotAllowedError'));
+
+      const savedState = makeGameSessionState({ currentPokemon: mockPokemon });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
+
+      const { result } = renderHook(() => useGame());
+      mockAudio.mockClear();
+
+      await expect(
+        act(async () => {
+          result.current.actions.playSound();
+        }),
+      ).resolves.not.toThrow();
+
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+      vi.unstubAllEnvs();
+      consoleErrorSpy.mockRestore();
     });
   });
 

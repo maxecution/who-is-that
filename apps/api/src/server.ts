@@ -6,6 +6,11 @@ export function buildServer(logger: boolean = false): FastifyInstance {
     logger,
   });
 
+  server.register(import('@fastify/rate-limit'), {
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
   // health check
   server.get('/', async () => {
     return { status: 'ok' };
