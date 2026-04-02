@@ -30,6 +30,13 @@ const mockPokemon = {
   cry: 'https://example.com/pikachu.ogg',
 };
 
+const mockNextPokemon = {
+  id: 151,
+  name: 'mew',
+  sprite: 'https://example.com/mew.png',
+  cry: 'https://example.com/mew.ogg',
+};
+
 const mockGameState = {
   currentPokemonId: 25,
   lives: 6,
@@ -385,6 +392,72 @@ describe('useGame', () => {
 
       expect(result.current.state.isGameOver).toBe(true);
     });
+
+    it('keeps the previous game state when loading the next Pokémon fails', async () => {
+      const savedState = makeGameSessionState({ currentPokemon: mockPokemon, score: 0, lives: 6 });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
+
+      vi.mocked(fetch).mockRejectedValueOnce(new Error('rate limited'));
+
+      const { result } = renderHook(() => useGame());
+
+      await act(async () => {
+        result.current.actions.submitGuess('pikachu');
+      });
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe(
+          'Network error while loading Pokémon. Check your connection and try again.',
+        );
+      });
+
+      expect(engineSubmitGuess).toHaveBeenCalledWith(expect.anything(), true);
+      expect(result.current.state.score).toBe(0);
+      expect(result.current.state.lives).toBe(6);
+      expect(result.current.state.currentPokemonId).toBe(25);
+      expect(result.current.state.currentPokemon).toEqual(mockPokemon);
+    });
+
+    it('retries submit successfully after an error and only then commits state', async () => {
+      const savedState = makeGameSessionState({ currentPokemon: mockPokemon, score: 0, lives: 6 });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
+
+      vi.mocked(engineSubmitGuess).mockReturnValue({
+        ...mockGameState,
+        currentPokemonId: 151,
+        score: 1,
+      });
+      vi.mocked(fetch)
+        .mockRejectedValueOnce(new Error('rate limited'))
+        .mockResolvedValueOnce({ ok: true, json: async () => mockNextPokemon } as Response);
+
+      const { result } = renderHook(() => useGame());
+
+      await act(async () => {
+        result.current.actions.submitGuess('pikachu');
+      });
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe(
+          'Network error while loading Pokémon. Check your connection and try again.',
+        );
+      });
+
+      expect(result.current.state.score).toBe(0);
+      expect(result.current.state.currentPokemonId).toBe(25);
+
+      await act(async () => {
+        result.current.actions.submitGuess('pikachu');
+      });
+
+      await waitFor(() => {
+        expect(result.current.state.currentPokemonId).toBe(151);
+      });
+
+      expect(result.current.state.score).toBe(1);
+      expect(result.current.state.currentPokemon).toEqual(mockNextPokemon);
+      expect(result.current.state.error).toBeNull();
+    });
   });
 
   describe('skip action', () => {
@@ -402,8 +475,10 @@ describe('useGame', () => {
     });
 
     it('moves to the next Pokemon and decrements lives', async () => {
-      const savedState = makeGameSessionState();
+      const savedState = makeGameSessionState({ currentPokemon: mockPokemon });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
+
+      vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => mockNextPokemon } as Response);
 
       const { result } = renderHook(() => useGame());
 
@@ -411,13 +486,18 @@ describe('useGame', () => {
         result.current.actions.skip();
       });
 
+      await waitFor(() => {
+        expect(result.current.state.currentPokemonId).toBe(151);
+      });
+
       expect(skipPokemon).toHaveBeenCalled();
       expect(result.current.state.currentPokemonId).toBe(151);
       expect(result.current.state.lives).toBe(5);
+      expect(result.current.state.currentPokemon).toEqual(mockNextPokemon);
     });
 
     it('sets isGameOver when the engine signals the game is over after a skip', async () => {
-      const savedState = makeGameSessionState();
+      const savedState = makeGameSessionState({ currentPokemon: mockPokemon });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
       vi.mocked(checkIsGameOver).mockReturnValue(true);
 
@@ -428,6 +508,64 @@ describe('useGame', () => {
       });
 
       expect(result.current.state.isGameOver).toBe(true);
+    });
+
+    it('keeps the previous game state when loading the next Pokémon fails', async () => {
+      const savedState = makeGameSessionState({ isGameOver: false, currentPokemon: mockPokemon });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
+      vi.mocked(fetch).mockRejectedValueOnce(new Error('rate limited'));
+
+      const { result } = renderHook(() => useGame());
+
+      await act(async () => {
+        result.current.actions.skip();
+      });
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe(
+          'Network error while loading Pokémon. Check your connection and try again.',
+        );
+      });
+
+      expect(skipPokemon).toHaveBeenCalled();
+      expect(result.current.state.currentPokemonId).toBe(25);
+      expect(result.current.state.lives).toBe(6);
+    });
+
+    it('retries skip successfully after an error and only then commits state', async () => {
+      const savedState = makeGameSessionState({ isGameOver: false, currentPokemon: mockPokemon });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
+
+      vi.mocked(fetch)
+        .mockRejectedValueOnce(new Error('rate limited'))
+        .mockResolvedValueOnce({ ok: true, json: async () => mockNextPokemon } as Response);
+
+      const { result } = renderHook(() => useGame());
+
+      await act(async () => {
+        result.current.actions.skip();
+      });
+
+      await waitFor(() => {
+        expect(result.current.state.error).toBe(
+          'Network error while loading Pokémon. Check your connection and try again.',
+        );
+      });
+
+      expect(result.current.state.currentPokemonId).toBe(25);
+      expect(result.current.state.lives).toBe(6);
+
+      await act(async () => {
+        result.current.actions.skip();
+      });
+
+      await waitFor(() => {
+        expect(result.current.state.currentPokemonId).toBe(151);
+      });
+
+      expect(result.current.state.lives).toBe(5);
+      expect(result.current.state.currentPokemon).toEqual(mockNextPokemon);
+      expect(result.current.state.error).toBeNull();
     });
   });
 
