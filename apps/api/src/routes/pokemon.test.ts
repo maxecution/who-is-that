@@ -124,25 +124,36 @@ describe('Pokemon API', () => {
 
   describe('Rate limiting', () => {
     it('returns 429 when /index limit is exceeded (40 requests/minute)', async () => {
-      const responses = await Promise.all(
-        Array.from({ length: 40 }, () => app.inject({ method: 'GET', url: '/api/pokemon/index' })),
-      );
-      responses.forEach((res) => expect(res.statusCode).toBe(200));
+      const rateLimitApp = buildServer(true);
 
-      const limited = await app.inject({ method: 'GET', url: '/api/pokemon/index' });
-      expect(limited.statusCode).toBe(429);
+      try {
+        const responses = await Promise.all(
+          Array.from({ length: 40 }, () => rateLimitApp.inject({ method: 'GET', url: '/api/pokemon/index' })),
+        );
+        responses.forEach((res) => expect(res.statusCode).toBe(200));
+
+        const limited = await rateLimitApp.inject({ method: 'GET', url: '/api/pokemon/index' });
+        expect(limited.statusCode).toBe(429);
+      } finally {
+        await rateLimitApp.close();
+      }
     });
 
     it('returns 429 when /:id limit is exceeded (60 requests/minute)', async () => {
+      const rateLimitApp = buildServer(true);
       vi.spyOn(pokemonClient, 'getPokemonById').mockResolvedValue(mockPokemon.full());
 
-      const responses = await Promise.all(
-        Array.from({ length: 60 }, () => app.inject({ method: 'GET', url: '/api/pokemon/25' })),
-      );
-      responses.forEach((res) => expect(res.statusCode).toBe(200));
+      try {
+        const responses = await Promise.all(
+          Array.from({ length: 60 }, () => rateLimitApp.inject({ method: 'GET', url: '/api/pokemon/25' })),
+        );
+        responses.forEach((res) => expect(res.statusCode).toBe(200));
 
-      const limited = await app.inject({ method: 'GET', url: '/api/pokemon/25' });
-      expect(limited.statusCode).toBe(429);
+        const limited = await rateLimitApp.inject({ method: 'GET', url: '/api/pokemon/25' });
+        expect(limited.statusCode).toBe(429);
+      } finally {
+        await rateLimitApp.close();
+      }
     });
   });
 });
