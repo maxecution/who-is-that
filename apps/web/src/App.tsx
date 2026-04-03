@@ -31,7 +31,11 @@ export default function App() {
         </div>
 
         <div className='w-full aspect-square rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-sm'>
-          <img src={state.currentPokemon?.sprite} alt={state.currentPokemon?.name} />
+          {state.error ? (
+            <p className='text-red-500'>{state.error}</p>
+          ) : (
+            <img src={state.currentPokemon?.sprite} alt={state.currentPokemon?.name} />
+          )}
         </div>
 
         <p className='text-slate-700 text-lg'>

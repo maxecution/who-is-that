@@ -13,7 +13,11 @@ import { STORAGE_KEY, API_BASE_URL } from '@web/constants';
 
 function playCry(cryUrl: string) {
   const audio = new Audio(cryUrl);
-  void audio.play().catch(() => undefined);
+  void audio.play().catch((error: unknown) => {
+    if (import.meta.env.DEV) {
+      console.error('Failed to play cry:', error);
+    }
+  });
 }
 
 function loadState(): Partial<GameSessionState> | null {
@@ -27,6 +31,52 @@ function loadState(): Partial<GameSessionState> | null {
 
 function saveState(state: GameSessionState) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function getApiErrorMessage(response: Response): string {
+  if (response.status === 429) {
+    const retryAfter = response.headers.get('retry-after');
+
+    if (retryAfter) {
+      const retryAfterSeconds = Number(retryAfter);
+
+      if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+        return `Too many requests. Please wait ${retryAfterSeconds} seconds and try again.`;
+      }
+
+      return 'Too many requests. Please wait a moment and try again.';
+    }
+
+    return 'Too many requests. Please wait a moment and try again.';
+  }
+
+  if (response.status >= 500) {
+    return 'Server error while loading Pokémon. Please try again.';
+  }
+
+  if (response.status >= 400) {
+    return 'Unable to load Pokémon right now. Please try again.';
+  }
+
+  return 'Failed to load Pokémon';
+}
+
+async function fetchPokemonSummary(id: number): Promise<{ data: PokemonSummary | null; error: string | null }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/pokemon/${id}`);
+
+    if (!res.ok) {
+      return { data: null, error: getApiErrorMessage(res) };
+    }
+
+    const data: PokemonSummary = await res.json();
+    return { data, error: null };
+  } catch {
+    return {
+      data: null,
+      error: 'Network error while loading Pokémon. Check your connection and try again.',
+    };
+  }
 }
 
 // Hook
@@ -53,29 +103,27 @@ export function useGame() {
 
   // Fetch Pokemon
   useEffect(() => {
-    if (state.isGameOver) return;
+    if (state.isGameOver || state.currentPokemon?.id === state.currentPokemonId) return;
 
     const fetchPokemon = async () => {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/pokemon/${state.currentPokemonId}`);
-        if (!res.ok) throw new Error('API error');
+      const { data, error } = await fetchPokemonSummary(state.currentPokemonId);
 
-        const data: PokemonSummary = await res.json();
-
+      if (error) {
         setState((prev) => ({
           ...prev,
-          currentPokemon: data,
+          error,
           isLoading: false,
         }));
-      } catch {
-        setState((prev) => ({
-          ...prev,
-          error: 'Failed to load Pokémon',
-          isLoading: false,
-        }));
+        return;
       }
+
+      setState((prev) => ({
+        ...prev,
+        currentPokemon: data,
+        isLoading: false,
+      }));
     };
 
     fetchPokemon();
@@ -100,35 +148,83 @@ export function useGame() {
 
   // Actions
   function submitGuess(guess: string) {
-    if (!state.currentPokemon || state.isGameOver) return;
+    if (!state.currentPokemon || state.isGameOver || state.isLoading) return;
 
     const normalisedGuess = normaliseName(guess);
     const normalisedName = normaliseName(state.currentPokemon.name);
 
     const isCorrect = normalisedGuess === normalisedName;
 
-    setState((prev) => {
-      const next = engineSubmitGuess(prev, isCorrect);
+    const next = engineSubmitGuess(state, isCorrect);
+    const nextIsGameOver = checkIsGameOver(next);
 
-      return {
+    if (nextIsGameOver) {
+      setState((prev) => ({
         ...prev,
         ...next,
-        isGameOver: checkIsGameOver(next),
-      };
+        isGameOver: true,
+      }));
+      return;
+    }
+
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+    void fetchPokemonSummary(next.currentPokemonId).then(({ data, error }) => {
+      if (error) {
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error,
+        }));
+        return;
+      }
+
+      setState((prev) => ({
+        ...prev,
+        ...next,
+        isGameOver: false,
+        currentPokemon: data,
+        isLoading: false,
+        error: null,
+      }));
     });
   }
 
   function skip() {
-    if (state.isGameOver) return;
+    if (state.isGameOver || state.isLoading) return;
 
-    setState((prev) => {
-      const next = skipPokemon(prev);
+    const next = skipPokemon(state);
+    const nextIsGameOver = checkIsGameOver(next);
 
-      return {
+    if (nextIsGameOver) {
+      setState((prev) => ({
         ...prev,
         ...next,
-        isGameOver: checkIsGameOver(next),
-      };
+        isGameOver: true,
+      }));
+      return;
+    }
+
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+    void fetchPokemonSummary(next.currentPokemonId).then(({ data, error }) => {
+      if (error) {
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error,
+        }));
+        return;
+      }
+
+      setState((prev) => ({
+        ...prev,
+        ...next,
+        isGameOver: false,
+        currentPokemon: data,
+        isLoading: false,
+        error: null,
+      }));
     });
   }
 
