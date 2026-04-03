@@ -4,6 +4,7 @@ import pokemonRoutes from './routes/pokemon';
 export function buildServer(logger: boolean = false): FastifyInstance {
   const server: FastifyInstance = Fastify({
     logger,
+    trustProxy: true,
   });
 
   server.register(import('@fastify/rate-limit'), {
