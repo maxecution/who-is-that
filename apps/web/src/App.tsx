@@ -1,7 +1,10 @@
+import { useState } from 'react';
+import PokemonSilhouette from './components/game/PokemonSilhouette';
 import { useGame } from './hooks/useGame';
 
 export default function App() {
   const { state, actions } = useGame();
+  const [currentGuess, setCurrentGuess] = useState('');
 
   return (
     <div className='min-h-screen bg-slate-100 flex items-center justify-center p-6'>
@@ -34,7 +37,11 @@ export default function App() {
           {state.error ? (
             <p className='text-red-500'>{state.error}</p>
           ) : (
-            <img src={state.currentPokemon?.sprite} alt={state.currentPokemon?.name} />
+            <PokemonSilhouette
+              imageUrl={state.currentPokemon?.sprite || ''}
+              correctPokemonName={state.currentPokemon?.name || ''}
+              guess={currentGuess || ''}
+            />
           )}
         </div>
 
@@ -46,13 +53,20 @@ export default function App() {
           <input
             className='w-full rounded-lg border-2 border-black focus:border-pokemonBlue'
             name='pokemon-guess'
-            value={state.currentPokemon?.name}
+            value={currentGuess}
+            onChange={(e) => setCurrentGuess(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                actions.submitGuess(currentGuess);
+              }
+            }}
+            placeholder='Enter your guess...'
           />
           <div className='flex gap-3 w-full'>
             <button
               className='flex-1 rounded-lg bg-pokemonBlue text-white py-2 font-medium hover:opacity-90 transition'
               onClick={() => {
-                actions.submitGuess((document.querySelector('input[name="pokemon-guess"]') as HTMLInputElement).value);
+                actions.submitGuess(currentGuess);
               }}>
               Guess
             </button>
