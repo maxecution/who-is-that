@@ -1,10 +1,35 @@
-import { useState } from 'react';
-import PokemonSilhouette from './components/game/PokemonSilhouette';
+import { lazy, Suspense, useRef, useState } from 'react';
+
 import { useGame } from './hooks/useGame';
+import { usePokemonIndex } from './hooks/usePokemonIndex';
+import type { GuessInputHandle } from './components/guess/GuessInput';
+
+const PokemonSilhouette = lazy(() => import('./components/game/PokemonSilhouette'));
+const GuessInput = lazy(() => import('./components/guess/GuessInput'));
 
 export default function App() {
   const { state, actions } = useGame();
+  const {
+    pokemonOptions,
+    isLoading: isPokemonIndexLoading,
+    error: pokemonIndexError,
+  } = usePokemonIndex(state.enabledGenerations);
   const [currentGuess, setCurrentGuess] = useState('');
+  const currentGuessRef = useRef('');
+  const guessInputRef = useRef<GuessInputHandle>(null);
+
+  // Blur commits the highlighted option after the button's click handler closure was created,
+  // so the ref holds the value the button must submit.
+  const updateCurrentGuess = (guess: string) => {
+    currentGuessRef.current = guess;
+    setCurrentGuess(guess);
+  };
+
+  const submitCurrentGuess = (guess: string) => {
+    actions.submitGuess(guess);
+    updateCurrentGuess('');
+    guessInputRef.current?.focus();
+  };
 
   return (
     <div className='min-h-screen bg-slate-100 flex items-center justify-center p-6'>
@@ -33,16 +58,21 @@ export default function App() {
           ))}
         </div>
 
+        {/* Pokémon Silhouette */}
         <div className='w-full aspect-square rounded-xl bg-slate-200 flex items-center justify-center text-slate-500 text-sm'>
-          {state.error ? (
-            <p className='text-red-500'>{state.error}</p>
-          ) : (
-            <PokemonSilhouette
-              imageUrl={state.currentPokemon?.sprite || ''}
-              correctPokemonName={state.currentPokemon?.name || ''}
-              guess={currentGuess || ''}
-            />
-          )}
+          <Suspense fallback={<div className='w-full h-full animate-pulse bg-slate-700 rounded-xl' />}>
+            {state.isLoading ? (
+              'Loading...'
+            ) : state.error ? (
+              <p className='text-red-500'>{state.error}</p>
+            ) : (
+              <PokemonSilhouette
+                imageUrl={state.currentPokemon?.sprite || ''}
+                correctPokemonName={state.currentPokemon?.name || ''}
+                guess={currentGuess || ''}
+              />
+            )}
+          </Suspense>
         </div>
 
         <p className='text-slate-700 text-lg'>
@@ -50,23 +80,27 @@ export default function App() {
         </p>
 
         <div className='flex flex-col gap-4 w-full'>
-          <input
-            className='w-full rounded-lg border-2 border-black focus:border-pokemonBlue'
-            name='pokemon-guess'
-            value={currentGuess}
-            onChange={(e) => setCurrentGuess(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                actions.submitGuess(currentGuess);
-              }
-            }}
-            placeholder='Enter your guess...'
-          />
+          {/* Guess Input */}
+          <Suspense fallback={<div className='w-full h-14 animate-pulse bg-slate-700 rounded-md' />}>
+            <GuessInput
+              ref={guessInputRef}
+              options={pokemonOptions}
+              value={currentGuess}
+              onChange={updateCurrentGuess}
+              onBlur={updateCurrentGuess}
+              onSubmit={submitCurrentGuess}
+              isDisabled={state.isGameOver || isPokemonIndexLoading || !!pokemonIndexError}
+              error={!!pokemonIndexError}
+              helperText={pokemonIndexError ?? (isPokemonIndexLoading ? 'Loading Pokemon names...' : undefined)}
+            />
+          </Suspense>
+
+          {/* Action Buttons */}
           <div className='flex gap-3 w-full'>
             <button
-              className='flex-1 rounded-lg bg-pokemonBlue text-white py-2 font-medium hover:opacity-90 transition'
+              className='flex-1 rounded-lg bg-pokemonBlue text-white py-2 font-medium hover:bg-blue-600 transition'
               onClick={() => {
-                actions.submitGuess(currentGuess);
+                submitCurrentGuess(currentGuessRef.current);
               }}>
               Guess
             </button>
@@ -75,6 +109,7 @@ export default function App() {
               className='flex-1 rounded-lg bg-slate-200 py-2 font-medium hover:bg-slate-300 transition'
               onClick={() => {
                 actions.skip();
+                guessInputRef.current?.focus();
               }}>
               Skip
             </button>
@@ -94,6 +129,7 @@ export default function App() {
               className='flex-1 rounded-lg bg-slate-200 py-2 font-medium hover:bg-slate-300 transition'
               onClick={() => {
                 actions.reset();
+                guessInputRef.current?.focus();
               }}>
               Reset
             </button>
