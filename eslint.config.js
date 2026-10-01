@@ -56,6 +56,7 @@ export default defineConfig([
       // React 17+ JSX runtime
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
+      'react/prop-types': 'off',
     },
   },
 
